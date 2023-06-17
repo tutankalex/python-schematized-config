@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "python-schematized-config"
+  site-url: "https://aistriketeam.github.io/python-schematized-config"
+  description: "validate configs using json schema"
+  repo-branch: main
+  repo-url: "https://github.com/aistriketeam/python-schematized-config"
