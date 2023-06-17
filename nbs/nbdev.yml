@@ -3,7 +3,11 @@ project:
 
 website:
   title: "python-schematized-config"
-  site-url: "https://aistriketeam.github.io/python-schematized-config"
+  site-url: "https://aistriketeam
+
+requirements = jsonschema>=4.17.3 python-dotenv>=1.0.0.github.io/python-schematized-config"
   description: "validate configs using json schema"
   repo-branch: main
-  repo-url: "https://github.com/aistriketeam/python-schematized-config"
+  repo-url: "https://github.com/aistriketeam
+
+requirements = jsonschema>=4.17.3 python-dotenv>=1.0.0/python-schematized-config"

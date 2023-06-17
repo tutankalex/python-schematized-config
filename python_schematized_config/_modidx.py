@@ -2,8 +2,10 @@
 
 d = { 'settings': { 'branch': 'main',
                 'doc_baseurl': '/python-schematized-config',
-                'doc_host': 'https://aistriketeam.github.io',
-                'git_url': 'https://github.com/aistriketeam/python-schematized-config',
+                'doc_host': 'https://aistriketeam\n\nrequirements = jsonschema>=4.17.3 python-dotenv>=1.0.0.github.io',
+                'git_url': 'https://github.com/aistriketeam\n'
+                           '\n'
+                           'requirements = jsonschema>=4.17.3 python-dotenv>=1.0.0/python-schematized-config',
                 'lib_path': 'python_schematized_config'},
   'syms': { 'python_schematized_config.core': { 'python_schematized_config.core.foo': ( 'core.html#foo',
                                                                                         'python_schematized_config/core.py')}}}
