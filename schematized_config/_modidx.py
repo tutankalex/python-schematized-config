@@ -2,10 +2,8 @@
 
 d = { 'settings': { 'branch': 'main',
                 'doc_baseurl': '/python-schematized-config',
-                'doc_host': 'https://aistriketeam\n\nrequirements = jsonschema>=4.17.3 python-dotenv>=1.0.0.github.io',
-                'git_url': 'https://github.com/aistriketeam\n'
-                           '\n'
-                           'requirements = jsonschema>=4.17.3 python-dotenv>=1.0.0/python-schematized-config',
+                'doc_host': 'https://aistriketeam.github.io',
+                'git_url': 'https://github.com/aistriketeam/python-schematized-config',
                 'lib_path': 'schematized_config'},
   'syms': { 'schematized_config.cli': { 'schematized_config.cli.generate_sample_dotenv': ( 'cli.html#generate_sample_dotenv',
                                                                                            'schematized_config/cli.py'),
