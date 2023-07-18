@@ -7,7 +7,6 @@ __all__ = ['validate_env', 'generate_sample_dotenv', 'main']
 from schematized_config.core import (
     ConfigValidator,
     ConfigValidatorException,
-    load_json,
     extract_declared_items,
 )
 
@@ -32,7 +31,7 @@ def validate_env(json_schema: Union[str, dict], dotenv_path: str=None):
 
 # %% ../nbs/01_cli.ipynb 4
 def generate_sample_dotenv(json_schema: Union[str, dict], seed_config: dict=None):
-    schema_dict = load_json(json_schema)
+    schema_dict = ConfigValidator.load_json(json_schema)
     merged_config = dict(os.environ)
     default_dotenv = dotenv.dotenv_values()
     merged_config.update(default_dotenv)
