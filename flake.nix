@@ -80,6 +80,7 @@
         '' + ''
           ### SHORTCUTS
           alias check='python -m schematized_config'
+          alias start-jupyter='jupyter notebook'
         '';  # join strings with +
       };
 
