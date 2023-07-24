@@ -98,23 +98,25 @@ class ConfigValidator(object):
     CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME = 'CONFIG_VALIDATOR_JSON_SCHEMA'
 
     @classmethod
-    def load_json(cls, json_source: Union[str, dict]=None) -> dict:
+    def load_json(cls, json_source: Union[str, dict]=None, storage_driver: FS = None) -> dict:
         '''
         convenience method to return a dict from either
         a file path or an already-loaded dict
         '''
+        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
         if isinstance(json_source, str):
-            with cls.DEFAULT_STORAGE_DRIVER.open(json_source) as ifile:
+            with storage_driver.open(json_source) as ifile:
                 return json.load(ifile)
         elif isinstance(json_source, dict):
             return json_source
 
     @classmethod
-    def get_default_json_schema(cls):
+    def get_default_json_schema(cls, storage_driver: FS = None) -> dict:
+        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
         if cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME in os.environ:
             expected_json_schema_path = \
                 os.environ[cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME]
-            with cls.DEFAULT_STORAGE_DRIVER.open(expected_json_schema_path) as ifile:
+            with storage_driver.open(expected_json_schema_path) as ifile:
                 return json.load(ifile)
         return None
 
@@ -147,15 +149,17 @@ class ConfigValidator(object):
         return coerced_config
     
     @classmethod
-    def load_validated_config(cls, json_schema: Union[str, dict], config: dict):
-        return cls(json_schema).load_config(config)
+    def load_validated_config(cls, json_schema: Union[str, dict], config: dict, **kwargs):
+        return cls(json_schema, **kwargs).load_config(config)
 
     @classmethod
-    def load_validated_environment(cls, json_schema: Union[str, dict]=None):
-        return cls.load_validated_config(json_schema, dict(os.environ))
+    def load_validated_environment(cls, json_schema: Union[str, dict]=None, **kwargs):
+        return cls.load_validated_config(json_schema, dict(os.environ), **kwargs)
         
     @classmethod
-    def load_dotenv(cls, json_schema: Union[str, dict]=None, dotenv_path: str=None):
-        config = dotenv.dotenv_values(dotenv_path)
+    def load_dotenv(cls, json_schema: Union[str, dict]=None, dotenv_path: str=None, storage_driver: FS=None):
+        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
+        with storage_driver.open(dotenv_path) as ifile:
+            config = dotenv.dotenv_values(stream=ifile)
         return cls.load_validated_config(
             json_schema or cls.get_default_json_schema(), config)
