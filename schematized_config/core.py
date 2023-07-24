@@ -131,8 +131,8 @@ class ConfigValidator(object):
         '''
         self.storage_driver = storage_driver or self.__class__.DEFAULT_STORAGE_DRIVER
         if isinstance(json_schema, (str, dict)):
-            self._json_schema = self.__class__.load_json(json_schema)
-        elif (default_schema := self.__class__.get_default_json_schema()):
+            self._json_schema = self.__class__.load_json(json_schema, storage_driver=self.storage_driver)
+        elif (default_schema := self.__class__.get_default_json_schema(storage_driver=self.storage_driver)):
             self._json_schema = default_schema
         else:
             raise Exception('did not receive or find a JSON schema')
@@ -162,4 +162,5 @@ class ConfigValidator(object):
         with storage_driver.open(dotenv_path) as ifile:
             config = dotenv.dotenv_values(stream=ifile)
         return cls.load_validated_config(
-            json_schema or cls.get_default_json_schema(), config)
+            json_schema or cls.get_default_json_schema(storage_driver=storage_driver),
+            config, storage_driver=storage_driver)
