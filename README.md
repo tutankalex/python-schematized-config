@@ -9,6 +9,16 @@ schematized config
 pip install python_schematized_config
 ```
 
+# development
+
+assuming you have [nix](https://nixos.org/download.html) installed and
+ready, make sure `nix-command` and `flake` are enabled (oneliner: run
+`export NIX_CONFIG="experimental-features = nix-command flakes"` in the
+terminal), then enter the dev shell using `nix develop`
+
+start the jupyter notebook using the provided alias or just
+`jupyter notebook`, and hack away
+
 ## How to use
 
 ``` python
