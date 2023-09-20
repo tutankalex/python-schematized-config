@@ -22,6 +22,10 @@
           # (whacked-setup + /bash/node_shortcuts.sh)
         ];
       } {
+        nativeBuildInputs = [
+          pkgs.quarto
+        ];
+
         buildInputs = [
           pkgs.python3
         ];
