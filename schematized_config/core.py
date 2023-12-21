@@ -198,6 +198,6 @@ class ConfigValidator(object):
             for key, value in validated_config.items():
                 if key in os.environ:
                     continue
-                os.environ[key] = value
+                os.environ[key] = str(value)
                 
         return validated_config
