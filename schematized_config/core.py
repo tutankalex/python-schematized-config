@@ -6,6 +6,7 @@ __all__ = ['logger', 'coerce_primitive_values', 'extract_declared_items', 'Confi
 # %% ../nbs/00_core.ipynb 2
 from nbdev.showdoc import *
 from fastcore.test import *
+from unittest.mock import patch
 
 import dotenv
 import json
@@ -157,7 +158,18 @@ class ConfigValidator(object):
         return cls.load_validated_config(json_schema, dict(os.environ), **kwargs)
         
     @classmethod
-    def load_dotenv(cls, json_schema: Union[str, dict]=None, dotenv_path: str=None, storage_driver: FS=None):
+    def load_dotenv(cls,
+                    json_schema: Union[str, dict]=None,
+                    dotenv_path: str=None,
+                    storage_driver: FS=None,
+                    override: bool=False,
+                   ):
+        '''
+        :param override: set variables into os.environ where applicable; i.e.
+        - if set in os.environ already and valid, leave alone
+        - if not set in os.environ already, read from .env or schema default
+        '''
+        
         storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
         if dotenv_path is None:
             maybe_dotenv_path = dotenv.find_dotenv()  # '' if not exist
@@ -178,6 +190,14 @@ class ConfigValidator(object):
             if key in config and config[key] != os.environ[key]:
                 logger.debug(f'os.environ key "{key}" overriding value present in {dotenv_path}')
             config[key] = os.environ[key]
-        return cls.load_validated_config(
+        validated_config = cls.load_validated_config(
             json_schema or cls.get_default_json_schema(storage_driver=storage_driver),
             config, storage_driver=storage_driver)
+        
+        if override:
+            for key, value in validated_config.items():
+                if key in os.environ:
+                    continue
+                os.environ[key] = value
+                
+        return validated_config
