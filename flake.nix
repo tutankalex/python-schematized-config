@@ -22,9 +22,12 @@
           # (whacked-setup + /bash/node_shortcuts.sh)
         ];
       } {
-        nativeBuildInputs = [
-          pkgs.quarto
-        ];
+        nativeBuildInputs = (
+          if pkgs.stdenv.isDarwin then [
+          ] else [
+            pkgs.quarto
+          ]
+        );
 
         buildInputs = [
           pkgs.python3
