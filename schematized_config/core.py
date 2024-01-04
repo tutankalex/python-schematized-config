@@ -11,6 +11,7 @@ from unittest.mock import patch
 import dotenv
 import json
 import os
+import os.path
 import jsonschema
 import logging
 from jsonschema import validate, ValidationError
@@ -23,15 +24,19 @@ logger = logging.getLogger(__name__)
 
 # %% ../nbs/00_core.ipynb 3
 def coerce_primitive_values(json_schema: dict, data: dict) -> dict:
-    '''
-    given a JSON schema dict, return a dict where the values that have
-    primitive types (`string`, `integer`, `number`, `boolean`) as described
-    in the schema are converted to the corresponding types from `str`
-    
-    :param json_schema: expected (but not validated) to be a json schema
-    :param data: the data (e.g. dotenv, os.environ) to extract from
-    :return: coerced dict
-    '''
+    """
+    Given a JSON schema dictionary, return a dictionary where the values that have
+    primitive types ('string', 'integer', 'number', 'boolean') 
+    as described in the schema are converted to the corresponding types from `str`.
+   
+    Args:
+        - `json_schema` (dict): JSON schema used for extraction. The function expects but does not validate this 
+                                to be a JSON schema.
+        - `data` (dict): The data (e.g., dotenv, os.environ) to extract from.
+
+    Returns:
+        dict: A coerced dictionary with values converted to the corresponding primitive types.
+    """
     if not isinstance(data, dict):
         return data
     out = data.copy()
@@ -65,18 +70,21 @@ def coerce_primitive_values(json_schema: dict, data: dict) -> dict:
 
 # %% ../nbs/00_core.ipynb 6
 def extract_declared_items(json_schema: dict, data: dict) -> dict:
-    '''
-    given a JSON schema dict, return a dict where
-    - all keys that are not declared in the schema are removed
-    - all keys that are declared in the schem are present;
-      if a key is declared in the schema with a default,
-      BUT NOT present in the original data, it will be added
-      using the 'default' value
-      
-    :param json_schema: expected (but not validated) to be a json schema
-    :param data: the data (e.g. dotenv, os.environ) to extract from
-    :return: extracted dict
-    '''
+    """
+    Given a JSON schema dict, return a dict following specified rules:
+    
+    1. All keys not declared in the schema are removed.
+    2. All keys declared in the schema are present. If a key declared in the schema with a default 
+       is not present in the original data, it's added with the 'default' value.
+    
+    Args:
+        - `json_schema` (dict): JSON schema used for extraction. The function expects but does not validate this 
+                                to be a JSON schema.
+        - `data` (dict): The data (for example, dotenv, os.environ) to extract from.
+
+    Returns:
+        dict: A dictionary that has been processed according to the rules specified above.
+    """
     properties = json_schema['properties']
     out = {key: value for (key, value) in data.items() if key in properties}
     for required_property, property_schema in properties.items():
@@ -88,55 +96,90 @@ def extract_declared_items(json_schema: dict, data: dict) -> dict:
 class ConfigValidatorException(Exception):
     
     def __init__(self, errors):
-        super().__init__('config failed to validate against JSON schema')
+        super().__init__('''config failed to validate against JSON schema\n{}'''.format(
+            '\n'.join(f'{error.json_path}: {error.message}' for error in errors)
+        ))
         self.errors = errors
 
 
 class ConfigValidator(object):
 
-    DEFAULT_STORAGE_DRIVER: FS = OSFS('.')
+    # this is a risky value: it gets reused across instances;
+    # the idea is to maybe set it once and use it multiple times.
+    # but in testing this smells bad
+    DEFAULT_STORAGE_DRIVER: FS = None  # defaults to OSFS
     
     CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME = 'CONFIG_VALIDATOR_JSON_SCHEMA'
+    
+    @classmethod
+    def get_default_storage_driver(cls):
+        if cls.DEFAULT_STORAGE_DRIVER is None:
+            cls.DEFAULT_STORAGE_DRIVER = OSFS(os.getcwd())
+        return cls.DEFAULT_STORAGE_DRIVER
 
+    
+    @classmethod
+    def _get_maybe_abspath_driver(cls, maybe_abspath: str):
+        if os.path.isabs(maybe_abspath):  # special case
+            return OSFS('/')
+        else:
+            return cls.get_default_storage_driver()
+        
     @classmethod
     def load_json(cls, json_source: Union[str, dict]=None, storage_driver: FS = None) -> dict:
-        '''
-        convenience method to return a dict from either
-        a file path or an already-loaded dict
-        '''
-        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
-        if isinstance(json_source, str):
-            with storage_driver.open(json_source) as ifile:
-                return json.load(ifile)
-        elif isinstance(json_source, dict):
+        """
+        Convenience method to return a dictionary from either a file path or an already-loaded dictionary.
+
+        Args:
+            - `json_source` (Union[str, dict], optional): The JSON source to load.
+                                This can be a file path (str) 
+                                or an already loaded dictionary (dict). 
+            - `storage_driver` (FS, optional): An instance of the storage driver used to load the JSON file. 
+                                               If not provided, OSFS from the current working dir is used.
+
+        Returns:
+            dict: A dictionary that was loaded from the provided `json_source`.
+        """
+        if isinstance(json_source, dict):
             return json_source
+        
+        if storage_driver is None:
+            storage_driver = cls._get_maybe_abspath_driver(json_source)
+        with storage_driver.open(json_source) as ifile:
+            return json.load(ifile)
 
     @classmethod
     def get_default_json_schema(cls, storage_driver: FS = None) -> dict:
-        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
         if cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME in os.environ:
             expected_json_schema_path = \
                 os.environ[cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME]
-            with storage_driver.open(expected_json_schema_path) as ifile:
-                return json.load(ifile)
+            return cls.load_json(expected_json_schema_path, storage_driver)
         return None
 
     def __init__(self, json_schema: Union[str, dict]=None, storage_driver: FS=None):
-        '''
-        :param json_schema: a str path to a json schema file, or a schema in dict form
-        
-        if no value is provided, it will fall back to looking for
-        an environment variable corresponding to the class variable
-        `CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME`
-        to find a JSON schema file
-        '''
-        self.storage_driver = storage_driver or self.__class__.DEFAULT_STORAGE_DRIVER
+        """
+        Initialize the instance with a JSON schema and a storage driver.
+
+        Args:
+            - `json_schema` (Union[str, dict], optional): A string path to a JSON schema file, or a schema in dictionary form. 
+                                                          If no value is provided, it will fall back to looking for an environment 
+                                                          variable corresponding to the class variable 
+                                                          `CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME` to find a JSON schema file.
+            - `storage_driver` (FS, optional): The storage driver to use. If no value is provided, 
+                                               `self.__class__.DEFAULT_STORAGE_DRIVER` is used.
+
+        Raises:
+            Exception: An exception is raised if no valid JSON schema is provided or found.
+        """
         if isinstance(json_schema, (str, dict)):
-            self._json_schema = self.__class__.load_json(json_schema, storage_driver=self.storage_driver)
-        elif (default_schema := self.__class__.get_default_json_schema(storage_driver=self.storage_driver)):
+            self._json_schema = self.__class__.load_json(json_schema, storage_driver=storage_driver)
+        elif (default_schema := self.__class__.get_default_json_schema(storage_driver=storage_driver)):
             self._json_schema = default_schema
         else:
-            raise Exception('did not receive or find a JSON schema')
+            raise Exception(
+                'did not receive or find a JSON schema (after falling back to os.environ["{}"])'.format(
+                    self.__class__.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME,
+                ))
 
     def load_config(self, config: dict):
         extracted_config = extract_declared_items(self._json_schema, config)
@@ -144,8 +187,6 @@ class ConfigValidator(object):
         validator = jsonschema.Draft4Validator(self._json_schema)
         errors = list(validator.iter_errors(coerced_config))
         if errors:
-            for error in errors:
-                logger.error(f'{error.json_path}:\t{error.message}')
             raise ConfigValidatorException(errors)
         return coerced_config
     
@@ -164,26 +205,52 @@ class ConfigValidator(object):
                     storage_driver: FS=None,
                     override: bool=False,
                    ):
-        '''
-        :param override: set variables into os.environ where applicable; i.e.
-        - if set in os.environ already and valid, leave alone
-        - if not set in os.environ already, read from .env or schema default
-        '''
-        
-        storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
+        """
+        Loads environment variables from a .env file or JSON schema defaults, where applicable, into `os.environ`.
+
+        Args:
+            - `json_schema` (Union[str, dict], optional):
+                                            A JSON schema used for extraction. It can be a string path to 
+                                            a JSON schema file or a dictionary. If not provided, another method 
+                                            (such as an environment variable or default schema) is used.
+            - `dotenv_path` (str, optional): Path to the .env file to load the variables from.
+                                             If not provided, loads an empty dict to start.
+            - `storage_driver` (FS, optional): The storage driver to use for loading files. If not given,
+                                               ".env" will be attempted from the current working directory;
+                                               if that does not exist, an empty dict will be used.
+            - `override` (bool, optional): If True, variables from the .env file or schema default override existing
+                                           `os.environ` variables.
+        """
+
+        # WARN this sidesteps storage_driver!
+        # it will cause breakage if storage_driver != OSFS AND `.env` exists in PWD
         if dotenv_path is None:
-            maybe_dotenv_path = dotenv.find_dotenv()  # '' if not exist
+            maybe_dotenv_path = dotenv.find_dotenv()  # '' if not exist; else abspath
             if maybe_dotenv_path:
                 logger.debug(f'using detected dotenv path; {maybe_dotenv_path}')
                 dotenv_path = maybe_dotenv_path
-        if dotenv_path:
-            with storage_driver.open(dotenv_path) as ifile:
-                config = dotenv.dotenv_values(stream=ifile)
-        else:
-            config = {}
-        loaded_config = config.copy()
         
-        json_schema_dict = cls.load_json(json_schema, storage_driver=storage_driver) or {}
+        config = None
+        
+        if dotenv_path:
+            dotenv_storage_driver = storage_driver or cls._get_maybe_abspath_driver(dotenv_path)
+            with dotenv_storage_driver.open(dotenv_path) as ifile:
+                config = dotenv.dotenv_values(stream=ifile)
+                
+        if config is None:
+            dotenv_storage_driver = storage_driver or cls.get_default_storage_driver()
+            if dotenv_storage_driver.exists('.env'):  # unlike dotenv.find_dotenv, stay relative!
+                with dotenv_storage_driver.open('.env') as ofile:
+                    config = dotenv.dotenv_values(stream=ifile)
+        
+        if config is None:
+            config = {}
+        
+        if json_schema is not None:
+            json_schema_dict = cls.load_json(json_schema, storage_driver=storage_driver) or {}
+        else: 
+            json_schema_dict = cls.get_default_json_schema(storage_driver)
+            
         for key in json_schema_dict.get('properties', []):
             if key not in os.environ:
                 continue
