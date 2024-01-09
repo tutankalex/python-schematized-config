@@ -240,7 +240,7 @@ class ConfigValidator(object):
         if config is None:
             dotenv_storage_driver = storage_driver or cls.get_default_storage_driver()
             if dotenv_storage_driver.exists('.env'):  # unlike dotenv.find_dotenv, stay relative!
-                with dotenv_storage_driver.open('.env') as ofile:
+                with dotenv_storage_driver.open('.env') as ifile:
                     config = dotenv.dotenv_values(stream=ifile)
         
         if config is None:
