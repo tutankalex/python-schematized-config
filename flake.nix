@@ -2,7 +2,7 @@
   nixConfig.bash-prompt = ''\033[1;32m\[[nix-develop:\[\033[36m\]\w\[\033[32m\]]$\033[0m '';
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/23.05-pre";
+    nixpkgs.url = "github:nixos/nixpkgs/23.05";
     whacked-setup = {
       url = "github:whacked/setup/58bdbff2eec48980b010048032382bed3a152e7e";
       flake = false;
@@ -88,13 +88,30 @@
           ### SHORTCUTS
           alias check='python -m schematized_config'
           alias start-jupyter='jupyter notebook'
+          alias build='NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1 nix build --impure'  # quarto unsupported on mac, but not needed at runtime
         '';  # join strings with +
       };
 
       packages = {
-        default = pkgs.stdenv.mkDerivation {
-          name = "schematized-config";
+        default = pkgs.python3Packages.buildPythonPackage rec {
+          pname = "schematized-config";
+          version = "0.0.10";
+
           src = ./.;
+
+          # these deps need to be outputted with the package output.
+          # NOTE that these are duplicated by settings.ini!
+          propagatedBuildInputs = with pkgs.python3Packages; [
+            fs
+            jsonschema
+            nbdev
+            python-dotenv
+          ];
+
+          # these deps are not needed at runtime
+          buildInputs = with pkgs.python3Packages; [
+            setuptools
+          ];
         };
       };
     }
