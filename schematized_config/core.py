@@ -4,25 +4,21 @@
 __all__ = ['logger', 'coerce_primitive_values', 'extract_declared_items', 'ConfigValidatorException', 'ConfigValidator']
 
 # %% ../nbs/00_core.ipynb 2
-from nbdev.showdoc import *
-from fastcore.test import *
-from unittest.mock import patch
-
-import dotenv
 import json
+import logging
 import os
 import os.path
-import jsonschema
-import logging
-from jsonschema import validate, ValidationError
 from typing import Union
+
+import dotenv
+import jsonschema
 from fs.base import FS
 from fs.osfs import OSFS
-
+from jsonschema import ValidationError, validate
 
 logger = logging.getLogger(__name__)
 
-# %% ../nbs/00_core.ipynb 3
+# %% ../nbs/00_core.ipynb 4
 def coerce_primitive_values(json_schema: dict, data: dict) -> dict:
     """
     Given a JSON schema dictionary, return a dictionary where the values that have
@@ -68,7 +64,7 @@ def coerce_primitive_values(json_schema: dict, data: dict) -> dict:
             continue
     return out
 
-# %% ../nbs/00_core.ipynb 6
+# %% ../nbs/00_core.ipynb 7
 def extract_declared_items(json_schema: dict, data: dict) -> dict:
     """
     Given a JSON schema dict, return a dict following specified rules:
@@ -92,7 +88,7 @@ def extract_declared_items(json_schema: dict, data: dict) -> dict:
             out[required_property] = property_schema['default']
     return out
 
-# %% ../nbs/00_core.ipynb 8
+# %% ../nbs/00_core.ipynb 9
 class ConfigValidatorException(Exception):
     
     def __init__(self, errors):

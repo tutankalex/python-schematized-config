@@ -4,21 +4,19 @@
 __all__ = ['VERSION', 'EXECUTABLE_NAME', 'validate_env', 'generate_sample_dotenv', 'main']
 
 # %% ../nbs/01_cli.ipynb 2
-from schematized_config.core import (
-    ConfigValidator,
-    ConfigValidatorException,
-    extract_declared_items,
-)
-
+import argparse
 import os
 import sys
-import argparse
-import dotenv
 from typing import Union
-from fastcore.script import call_parse, anno_parser
+
+import dotenv
+from fastcore.script import anno_parser, call_parse
+
+from .core import (ConfigValidator, ConfigValidatorException,
+                                     extract_declared_items)
 
 # %% ../nbs/01_cli.ipynb 3
-def validate_env(json_schema: Union[str, dict], dotenv_path: str=None):
+def validate_env(json_schema: Union[str, dict], dotenv_path: str=None) -> bool:
     validator = ConfigValidator(json_schema)
     try:
         validator.load_config(dotenv.dotenv_values(dotenv_path))
@@ -30,7 +28,7 @@ def validate_env(json_schema: Union[str, dict], dotenv_path: str=None):
         return False
 
 # %% ../nbs/01_cli.ipynb 4
-def generate_sample_dotenv(json_schema: Union[str, dict], seed_config: dict=None):
+def generate_sample_dotenv(json_schema: Union[str, dict], seed_config: dict=None) -> str:
     schema_dict = ConfigValidator.load_json(json_schema)
     merged_config = dict(os.environ)
     default_dotenv = dotenv.dotenv_values()
@@ -78,7 +76,9 @@ def main(
         sys.stdout.write(generate_sample_dotenv(generate))
     elif schema and validate:
         dotenv_path = validate
-        validate_env(schema, dotenv_path)
+        if validate_env(schema, dotenv_path):
+            sys.exit(0)
+        else:
+            sys.exit(1)
     else:
         anno_parser(main, EXECUTABLE_NAME).print_help()
-
