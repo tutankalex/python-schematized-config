@@ -12,9 +12,11 @@ from typing import Union
 
 import dotenv
 import jsonschema
-from fs.base import FS
-from fs.osfs import OSFS
+from fsspec.spec import AbstractFileSystem
+from fsspec.implementations.local import LocalFileSystem
+from fsspec.implementations.dirfs import DirFileSystem
 from jsonschema import ValidationError, validate
+from io import StringIO
 
 logger = logging.getLogger(__name__)
 
@@ -103,26 +105,26 @@ class ConfigValidator(object):
     # this is a risky value: it gets reused across instances;
     # the idea is to maybe set it once and use it multiple times.
     # but in testing this smells bad
-    DEFAULT_STORAGE_DRIVER: FS = None  # defaults to OSFS
+    DEFAULT_STORAGE_DRIVER: AbstractFileSystem = None  # defaults to DirFileSystem
     
     CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME = 'CONFIG_VALIDATOR_JSON_SCHEMA'
     
     @classmethod
     def get_default_storage_driver(cls):
         if cls.DEFAULT_STORAGE_DRIVER is None:
-            cls.DEFAULT_STORAGE_DRIVER = OSFS(os.getcwd())
+            cls.DEFAULT_STORAGE_DRIVER = DirFileSystem(os.getcwd())
         return cls.DEFAULT_STORAGE_DRIVER
 
     
     @classmethod
     def _get_maybe_abspath_driver(cls, maybe_abspath: str):
         if os.path.isabs(maybe_abspath):  # special case
-            return OSFS('/')
+            return DirFileSystem('/')
         else:
             return cls.get_default_storage_driver()
         
     @classmethod
-    def load_json(cls, json_source: Union[str, dict]=None, storage_driver: FS = None) -> dict:
+    def load_json(cls, json_source: Union[str, dict]=None, storage_driver: AbstractFileSystem = None) -> dict:
         """
         Convenience method to return a dictionary from either a file path or an already-loaded dictionary.
 
@@ -130,8 +132,9 @@ class ConfigValidator(object):
             - `json_source` (Union[str, dict], optional): The JSON source to load.
                                 This can be a file path (str) 
                                 or an already loaded dictionary (dict). 
-            - `storage_driver` (FS, optional): An instance of the storage driver used to load the JSON file. 
-                                               If not provided, OSFS from the current working dir is used.
+            - `storage_driver` (AbstractFileSystem, optional): An instance of the storage driver used to
+                                load the JSON file. If not provided, DirFileSystem from the current
+                                working dir is used.
 
         Returns:
             dict: A dictionary that was loaded from the provided `json_source`.
@@ -145,14 +148,14 @@ class ConfigValidator(object):
             return json.load(ifile)
 
     @classmethod
-    def get_default_json_schema(cls, storage_driver: FS = None) -> dict:
+    def get_default_json_schema(cls, storage_driver: AbstractFileSystem = None) -> dict:
         if cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME in os.environ:
             expected_json_schema_path = \
                 os.environ[cls.CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME]
             return cls.load_json(expected_json_schema_path, storage_driver)
         return None
 
-    def __init__(self, json_schema: Union[str, dict]=None, storage_driver: FS=None):
+    def __init__(self, json_schema: Union[str, dict]=None, storage_driver: AbstractFileSystem=None):
         """
         Initialize the instance with a JSON schema and a storage driver.
 
@@ -161,8 +164,8 @@ class ConfigValidator(object):
                                                           If no value is provided, it will fall back to looking for an environment 
                                                           variable corresponding to the class variable 
                                                           `CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME` to find a JSON schema file.
-            - `storage_driver` (FS, optional): The storage driver to use. If no value is provided, 
-                                               `self.__class__.DEFAULT_STORAGE_DRIVER` is used.
+            - `storage_driver` (AbstractFileSystem, optional): The storage driver to use. If no value is provided, 
+                                                          `self.__class__.DEFAULT_STORAGE_DRIVER` is used.
 
         Raises:
             Exception: An exception is raised if no valid JSON schema is provided or found.
@@ -198,7 +201,7 @@ class ConfigValidator(object):
     def load_dotenv(cls,
                     json_schema: Union[str, dict]=None,
                     dotenv_path: str=None,
-                    storage_driver: FS=None,
+                    storage_driver: AbstractFileSystem=None,
                     override: bool=False,
                    ):
         """
@@ -211,15 +214,15 @@ class ConfigValidator(object):
                                             (such as an environment variable or default schema) is used.
             - `dotenv_path` (str, optional): Path to the .env file to load the variables from.
                                              If not provided, loads an empty dict to start.
-            - `storage_driver` (FS, optional): The storage driver to use for loading files. If not given,
-                                               ".env" will be attempted from the current working directory;
-                                               if that does not exist, an empty dict will be used.
+            - `storage_driver` (AbstractFileSystem, optional): The storage driver to use for loading files.
+                                             If not given, ".env" will be attempted from the current working
+                                             directory;  if that does not exist, an empty dict will be used.
             - `override` (bool, optional): If True, variables from the .env file or schema default override existing
                                            `os.environ` variables.
         """
 
         # WARN this sidesteps storage_driver!
-        # it will cause breakage if storage_driver != OSFS AND `.env` exists in PWD
+        # it will cause breakage if storage_driver != DirFileSystem AND `.env` exists in PWD
         if dotenv_path is None:
             maybe_dotenv_path = dotenv.find_dotenv()  # '' if not exist; else abspath
             if maybe_dotenv_path:
@@ -231,13 +234,13 @@ class ConfigValidator(object):
         if dotenv_path:
             dotenv_storage_driver = storage_driver or cls._get_maybe_abspath_driver(dotenv_path)
             with dotenv_storage_driver.open(dotenv_path) as ifile:
-                config = dotenv.dotenv_values(stream=ifile)
+                config = dotenv.dotenv_values(stream=StringIO(ifile.read().decode('utf-8')))
                 
         if config is None:
             dotenv_storage_driver = storage_driver or cls.get_default_storage_driver()
             if dotenv_storage_driver.exists('.env'):  # unlike dotenv.find_dotenv, stay relative!
                 with dotenv_storage_driver.open('.env') as ifile:
-                    config = dotenv.dotenv_values(stream=ifile)
+                    config = dotenv.dotenv_values(stream=StringIO(ifile.read().decode('utf-8')))
         
         if config is None:
             config = {}
