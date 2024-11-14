@@ -1,0 +1,62 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "schematized config",
+    "section": "",
+    "text": "pip install python_schematized_config",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "schematized config",
+    "section": "",
+    "text": "pip install python_schematized_config",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#usage",
+    "href": "index.html#usage",
+    "title": "schematized config",
+    "section": "usage",
+    "text": "usage\n\nfrom schematized_config.core import ConfigValidator\n\n\nimport os\nimport os.path as _p\n\nif _p.exists('.env') and 'CONFIG_VALIDATOR_JSON_SCHEMA' in os.environ:\n    ConfigValidator.load_dotenv()  # use defaults of .env and CONFIG_VALIDATOR_JSON_SCHEMA",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#nbdev",
+    "href": "index.html#nbdev",
+    "title": "schematized config",
+    "section": "nbdev",
+    "text": "nbdev\nthis package is developed using nbdev, so we use an nbdev-centric development flow. For a quick guide, we recommend checking out the end-to-end walkthrough. But in short: edit notebooks, then run the nbdev_* management commands. The most essential flow is as follows:\n\nedit the notebook files (core fore core, and cli for the command line interface)\npython setup.py install # note we don’t use nbdev_install because we manage quarto using nix\nnbdev_prepare\nrun code using the package\nnbdev_release\nnbdev_pypi\n\n\nrunning tests\nif you share variables between cells in your test blocks, this causes trouble during nbdev_prepare as it tries to run cells in isolation, leading to e.g.\nNameError: name 'example_properties_schema' is not defined\nto deal with this, you can merge cells that use a common variable\n\n\nupdating package dependencies\nnote that package dependencies are specified in settings.ini; you shouldn’t be editing setup.py by hand. To add a requirement, add it to the requuirements entry in settings.ini, then run python setup.py install",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "cli.html",
+    "href": "cli.html",
+    "title": "cli",
+    "section": "",
+    "text": "source\n\nvalidate_env\n\n validate_env (json_schema:Union[str,dict], dotenv_path:str=None)\n\n\nsource\n\n\ngenerate_sample_dotenv\n\n generate_sample_dotenv (json_schema:Union[str,dict],\n                         seed_config:dict=None)\n\n\nsource\n\n\nmain\n\n main (generate:str=None, schema:str=None, validate:str='env')\n\nmain: friendly tools to work with schemas and dotenv (vNOT-IN-MODULE)\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ngenerate\nstr\nNone\npath to a json schema that validates a dotenv\n\n\nschema\nstr\nNone\npath to json schema used for validation\n\n\nvalidate\nstr\nenv\nvalidate a dotenv; requires",
+    "crumbs": [
+      "cli"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "source\n\ncoerce_primitive_values\n\n coerce_primitive_values (json_schema:dict, data:dict)\n\n*Given a JSON schema dictionary, return a dictionary where the values that have primitive types (‘string’, ‘integer’, ‘number’, ‘boolean’) as described in the schema are converted to the corresponding types from str.\nArgs: - json_schema (dict): JSON schema used for extraction. The function expects but does not validate this to be a JSON schema. - data (dict): The data (e.g., dotenv, os.environ) to extract from.\nReturns: dict: A coerced dictionary with values converted to the corresponding primitive types.*\n\nsource\n\n\nextract_declared_items\n\n extract_declared_items (json_schema:dict, data:dict)\n\n*Given a JSON schema dict, return a dict following specified rules:\n\nAll keys not declared in the schema are removed.\nAll keys declared in the schema are present. If a key declared in the schema with a default is not present in the original data, it’s added with the ‘default’ value.\n\nArgs: - json_schema (dict): JSON schema used for extraction. The function expects but does not validate this to be a JSON schema. - data (dict): The data (for example, dotenv, os.environ) to extract from.\nReturns: dict: A dictionary that has been processed according to the rules specified above.*\n\nsource\n\n\nConfigValidator\n\n ConfigValidator (json_schema:Union[str,dict]=None,\n                  storage_driver:fsspec.spec.AbstractFileSystem=None)\n\n*Initialize the instance with a JSON schema and a storage driver.\nArgs: - json_schema (Union[str, dict], optional): A string path to a JSON schema file, or a schema in dictionary form. If no value is provided, it will fall back to looking for an environment variable corresponding to the class variable CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME to find a JSON schema file. - storage_driver (AbstractFileSystem, optional): The storage driver to use. If no value is provided, self.__class__.DEFAULT_STORAGE_DRIVER is used.\nRaises: Exception: An exception is raised if no valid JSON schema is provided or found.*\n\nsource\n\n\nConfigValidatorException\n\n ConfigValidatorException (errors)\n\nCommon base class for all non-exit exceptions.",
+    "crumbs": [
+      "core"
+    ]
+  }
+]
