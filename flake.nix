@@ -58,7 +58,7 @@
             # on nb extensions (in)compatibility.
             # below versions are from trial and error
             pip install \
-              twine==4.0.2 \
+              twine==5 \
               notebook==6.2.0 \
               jupyter_server==2.3.0 \
               jupyter_core==5.2.0 \
