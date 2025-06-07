@@ -2,9 +2,9 @@
   nixConfig.bash-prompt = ''\033[1;32m\[[nix-develop:\[\033[36m\]\w\[\033[32m\]]$\033[0m '';
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/23.05";
+    nixpkgs.url = "github:nixos/nixpkgs/24.11";
     whacked-setup = {
-      url = "github:whacked/setup/58bdbff2eec48980b010048032382bed3a152e7e";
+      url = "github:whacked/setup/c7785e20b33713232bb514526ee1300c5f8a007e";
       flake = false;
     };
   };
@@ -48,7 +48,7 @@
           export VIRTUAL_ENV=''${VIRTUAL_ENV-$PWD/venv}
           # FIX for ImportError: libstdc++.so.6: cannot open shared object file: No such file or directory
           # but note that gcc may be a costly import
-          export LD_LIBRARY_PATH=${pkgs.gcc-unwrapped.lib}/lib:$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=${pkgs.zlib}/lib:${pkgs.gcc-unwrapped.lib}/lib:$LD_LIBRARY_PATH
           export JUPYTER_CONFIG_DIR=''${JUPYTER_CONFIG_DIR-$PWD/.jupyter}
           if [ ! -e $JUPYTER_CONFIG_DIR ]; then
             mkdir $JUPYTER_CONFIG_DIR
@@ -64,7 +64,7 @@
               jupyter_core==5.2.0 \
               nbconvert==7.2.9 \
               nbformat==5.7.3 \
-              nbdev==2.3.12 \
+              nbdev==2.4.2 \
               jupytext==1.14.5 \
               jupyter_contrib_nbextensions==0.5.1 \
               jupyter_nbextensions_configurator
