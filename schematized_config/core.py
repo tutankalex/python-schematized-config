@@ -180,7 +180,7 @@ class ConfigValidator(object):
                 )
             )
 
-    def load_config(self, config: dict):
+    def load_config(self, config: dict) -> dict:
         extracted_config = extract_declared_items(self._json_schema, config)
         coerced_config = coerce_primitive_values(self._json_schema, extracted_config)
         validator = jsonschema.Draft4Validator(self._json_schema)
@@ -194,11 +194,11 @@ class ConfigValidator(object):
     @classmethod
     def load_validated_config(
         cls, json_schema: Union[str, dict], config: dict, **kwargs
-    ):
+    ) -> dict:
         return cls(json_schema, **kwargs).load_config(config)
 
     @classmethod
-    def load_validated_environment(cls, json_schema: Union[str, dict] = None, **kwargs):
+    def load_validated_environment(cls, json_schema: Union[str, dict] = None, **kwargs) -> dict:
         return cls.load_validated_config(json_schema, dict(os.environ), **kwargs)
 
     @classmethod
@@ -207,7 +207,7 @@ class ConfigValidator(object):
         json_schema: Union[str, dict] = None,
         dotenv_path: str = None,
         storage_driver: AbstractFileSystem = None,
-    ):
+    ) -> dict:
         storage_driver = storage_driver or cls.DEFAULT_STORAGE_DRIVER
         if dotenv_path is None:
             maybe_dotenv_path = dotenv.find_dotenv()  # '' if not exist; else abspath
