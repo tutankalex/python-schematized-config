@@ -1,0 +1,62 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "schematized config",
+    "section": "",
+    "text": "pip install python_schematized_config",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "schematized config",
+    "section": "",
+    "text": "pip install python_schematized_config",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#usage",
+    "href": "index.html#usage",
+    "title": "schematized config",
+    "section": "usage",
+    "text": "usage\n\npython\n\nfrom schematized_config.core import ConfigValidator\n\n\nimport os\nimport os.path as _p\n\nif _p.exists('.env') and 'CONFIG_VALIDATOR_JSON_SCHEMA' in os.environ:\n    ConfigValidator.load_dotenv()  # use defaults of .env and CONFIG_VALIDATOR_JSON_SCHEMA\n\n\n\nCLI\n\ngenerate skeleton code for working with a validated .env\nthis will generate stub files in these conventional locations if they do not yet exist:\n\nMakefile\ngenerators/env.schema.jsonnet\nsrc/schemas/autogen/EnvSchema.py\npython stub code for loading the validated EnvSchema class against .env, as a variable called Env (this is output to stdout)\n\nschematized-config --codegen all &gt; src/env.py\n\nedit generators/env.schema.jsonnet to add environment variable names and validation\nmake schemas/env.schema.json\nmake src/schemas/autogen/EnvSchema.py\noptionally update the make rule\nuse the src/env.py (or whereever you put it)",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "index.html#nbdev",
+    "href": "index.html#nbdev",
+    "title": "schematized config",
+    "section": "nbdev",
+    "text": "nbdev\nthis package is developed using nbdev, so we use an nbdev-centric development flow. For a quick guide, we recommend checking out the end-to-end walkthrough. But in short: edit notebooks, then run the nbdev_* management commands. The most essential flow is as follows:\n\nedit the notebook files (core fore core, and cli for the command line interface)\npython setup.py install # note we don’t use nbdev_install because we manage quarto using nix\nnbdev_prepare\nrun code using the package\nnbdev_release\nnbdev_pypi\n\n\nrunning tests\nif you share variables between cells in your test blocks, this causes trouble during nbdev_prepare as it tries to run cells in isolation, leading to e.g.\nNameError: name 'example_properties_schema' is not defined\nto deal with this, you can merge cells that use a common variable\n\n\nupdating package dependencies\nnote that package dependencies are specified in settings.ini; you shouldn’t be editing setup.py by hand. To add a requirement, add it to the requuirements entry in settings.ini, then run python setup.py install",
+    "crumbs": [
+      "schematized config"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "source\n\ncoerce_primitive_values\n\n coerce_primitive_values (json_schema:dict, data:dict)\n\n*given a JSON schema dict, return a dict where the values that have primitive types (string, integer, number, boolean) as described in the schema are converted to the corresponding types from str\n:param json_schema: expected (but not validated) to be a json schema :param data: the data (e.g. dotenv, os.environ) to extract from :return: coerced dict*\n\nsource\n\n\nextract_declared_items\n\n extract_declared_items (json_schema:dict, data:dict)\n\n*given a JSON schema dict, return a dict where - all keys that are not declared in the schema are removed - all keys that are declared in the schem are present; if a key is declared in the schema with a default, BUT NOT present in the original data, it will be added using the ‘default’ value\n:param json_schema: expected (but not validated) to be a json schema :param data: the data (e.g. dotenv, os.environ) to extract from :return: extracted dict*\n\nsource\n\n\nConfigValidator\n\n ConfigValidator (json_schema:Union[str,dict]=None,\n                  storage_driver:fsspec.spec.AbstractFileSystem=None)\n\n*:param json_schema: a str path to a json schema file, or a schema in dict form\nif no value is provided, it will fall back to looking for an environment variable corresponding to the class variable CONFIG_VALIDATOR_JSON_SCHEMA_ENVVAR_NAME to find a JSON schema file*\n\nsource\n\n\nConfigValidatorException\n\n ConfigValidatorException (errors)\n\nCommon base class for all non-exit exceptions.",
+    "crumbs": [
+      "core"
+    ]
+  },
+  {
+    "objectID": "cli.html",
+    "href": "cli.html",
+    "title": "cli",
+    "section": "",
+    "text": "source\n\nvalidate_env\n\n validate_env (json_schema:Union[str,dict], dotenv_path:str=None)\n\n\nsource\n\n\ngenerate_sample_dotenv\n\n generate_sample_dotenv (json_schema:Union[str,dict],\n                         seed_config:dict=None)\n\n\nsource\n\n\ngenerate_code\n\n generate_code (output_type:str)\n\noutput conventional skeleton code for typed dotenv loading\n\nsource\n\n\nTemplates\n\n Templates ()\n\nInitialize self. See help(type(self)) for accurate signature.\n\nsource\n\n\nOutputType\n\n OutputType (value, names=None, module=None, qualname=None, type=None,\n             start=1)\n\nAn enumeration.\n\nsource\n\n\nmain\n\n main (generate:str=None, schema:str=None, codegen:str=None,\n       validate:str='env')\n\nmain: friendly tools to work with schemas and dotenv (vNOT-IN-MODULE)\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ngenerate\nstr\nNone\npath to a json schema that validates a dotenv\n\n\nschema\nstr\nNone\npath to json schema used for validation\n\n\ncodegen\nstr\nNone\nprint [jsonnet, makefile, python] code stubs; use all to generate the jsonnet+makefile, and print the python code\n\n\nvalidate\nstr\nenv\nvalidate a dotenv; requires",
+    "crumbs": [
+      "cli"
+    ]
+  }
+]
